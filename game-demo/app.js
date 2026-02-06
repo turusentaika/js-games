@@ -1,14 +1,17 @@
 import { Player } from './player.js';
 import { Star } from './star.js';
 import { Stuff } from './stuff.js';
+import { Score } from './points.js';
+import { Lives } from './lives.js';
 
-const WIDTH = 600;
-const HEIGHT = 400;
-const STEP = 5;
-const STARTX = 200;
-const STARTY = 300;
+
+const WIDTH = 1895;
+const HEIGHT = 900;
+const STEP = 50;
+const STARTX = 300;
+const STARTY = 400;
 const PLAYERSIZE = 100;
-const SPEED = 2;
+const SPEED = 7;
 //https://freesound.org/people/HuvaaKoodia/sounds/77087/
 const audio_laser = new Audio();
 audio_laser.src = "./sound/laser_zero.wav";
@@ -21,18 +24,22 @@ let trashImg = document.getElementById("trash");
 let bananaImg = document.getElementById("banana");
 let moneyImg = document.getElementById("money");
 let colaImg = document.getElementById("cola");
-let images = [{"img": trashImg, "xsize": 60, "ysize": 60, speed: 4, "sound": audio_laser},
-              {"img": bananaImg, "xsize": 60, "ysize": 20, speed: 4, "sound": audio_bubble},
-              {"img": moneyImg, "xsize": 50, "ysize": 30, speed: 4, "sound": audio_bubble},
-              {"img": colaImg, "xsize": 30, "ysize": 50, speed: 4, "sound": audio_laser}];
+let images = [{"img": trashImg, "xsize": 60, "ysize": 60, speed: 10, "sound": audio_laser, points: -10, isTrash: true},
+              {"img": bananaImg, "xsize": 60, "ysize": 20, speed: 7, "sound": audio_bubble, points: 10, isTrash: false},
+              {"img": moneyImg, "xsize": 50, "ysize": 30, speed: 7, "sound": audio_bubble, points: 20, isTrash: false},
+              {"img": colaImg, "xsize": 30, "ysize": 50, speed: 10, "sound": audio_laser, points: -20, isTrash: true}];
 canvas.height = HEIGHT;
 canvas.width = WIDTH;
 let context = canvas.getContext("2d");
 const noOfStars = 50;
-const noOfStuff = 10;
+const noOfStuff = 25;
 let stars = [];
 let stuff = [];
 let player = new Player(context, playerImg, STARTX, STARTY, PLAYERSIZE, PLAYERSIZE);
+let score = new Score(context);
+let lives = new Lives(context, 5);
+
+
 
 for(let i=0; i < noOfStuff; i++){
     stuff.push(new Stuff(context, images, WIDTH, HEIGHT, SPEED));
@@ -43,11 +50,18 @@ for(let i=0; i < noOfStars; i++){
 }
 
 window.addEventListener("keydown", event => {
-    if(event.key === "ArrowUp"){
-        player.y = player.y - STEP;
-    } else if(event.key === "ArrowDown"){
-        player.y = player.y + STEP;
-    } 
+    if (event.key === "Enter" && lives.gameOver) {
+        restartGame();
+        return;
+    }
+
+    if (!lives.gameOver) {
+        if (event.key === "ArrowUp") {
+            player.y -= STEP;
+        } else if (event.key === "ArrowDown") {
+            player.y += STEP;
+        }
+    }
 });
 
 function draw (){
@@ -61,16 +75,48 @@ function draw (){
         stuff.show();
         stuff.move();
     });
-    if(player){
-        stuff.forEach(stuff => stuff.collide(player));
+    if (player && !lives.gameOver) {
+        stuff.forEach(s => {
+            if (s.collide(player)) {
+    
+                if (s.isTrash) {
+                    lives.loseLife();
+                } else {
+                    score.add(s.points);
+                }
+    
+                s.reset();
+            }
+        });
+    
         player.show();
     }
-}
+    
+    score.draw();
+    lives.draw();
+
+    
+};
 
 function update(){
-    draw();
-    window.requestAnimationFrame(update);
+    if (!lives.gameOver) {
+        draw();
+        window.requestAnimationFrame(update);
+    } else {
+        draw(); // piirretään vielä game over -teksti
+    }
 };
+
+function restartGame() {
+    score.reset();
+    lives.reset();
+
+    stuff.forEach(s => s.reset());
+
+    update();
+}
+
+
 
 addEventListener("load", function(){
     update();
