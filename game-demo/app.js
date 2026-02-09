@@ -1,6 +1,6 @@
 import { Player } from './player.js';
 import { Star } from './star.js';
-import { Stuff } from './stuff.js';
+import { Item } from "./item.js";
 import { Score } from './points.js';
 import { Lives } from './lives.js';
 
@@ -34,7 +34,9 @@ let context = canvas.getContext("2d");
 const noOfStars = 50;
 const noOfStuff = 25;
 let stars = [];
-let stuff = [];
+let items = [];
+let gameSpeed = 4;
+let distanceCounter = 0;
 let player = new Player(context, playerImg, STARTX, STARTY, PLAYERSIZE, PLAYERSIZE);
 let score = new Score(context);
 let lives = new Lives(context, 5);
@@ -99,6 +101,13 @@ function draw (){
 };
 
 function update(){
+    distanceCounter += gameSpeed;
+
+    if (distanceCounter > 2000) {
+        gameSpeed += 0.5;
+        distanceCounter = 0;
+    }
+
     if (!lives.gameOver) {
         draw();
         window.requestAnimationFrame(update);
